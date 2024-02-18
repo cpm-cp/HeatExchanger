@@ -7,6 +7,6 @@ units = np.array(['kg/m3', 'm3/kg', 'Pa*s', 'W/m*K'])
 
 print('Water properties @360K & @1atm:')
 for (index, prop), unit in zip(enumerate(start), units):
-    print(info[index], ": ", prop, unit)
+    print(info[index], ":", prop, unit)
 
 
