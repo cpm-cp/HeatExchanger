@@ -6,6 +6,9 @@
 # Ignore .pytest_cache file
 .pytest_cache
 
+# Ignore the WebDriverPath file
+**/WebDriverPath
+
 # C extensions
 *.so
 
