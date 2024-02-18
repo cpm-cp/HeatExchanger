@@ -1,0 +1,1 @@
+WebDriverPath: str = r'C:\Users\Carlos Pallo\Downloads\edgedriver_win64\msedgedriver.exe'
