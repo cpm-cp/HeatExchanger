@@ -4,7 +4,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from WebScrap.WebDriverPath import WebDriverPath # Personal path
+from WebScrap.WebDriverPath import WebDriverPath, PATH # Personal path
 from bs4 import BeautifulSoup
 import numpy as np
 from time import sleep
@@ -47,14 +47,13 @@ def filled_parameters(driver: webdriver.Edge, low_temperature: float, high_tempe
 def get_water_thermophysic_info(low_temperature: float, high_temperature: float) -> np.ndarray:
 
     # Path route
-    PATH = 'https://webbook.nist.gov/cgi/fluid.cgi?ID=C7732185&TUnit=K&PUnit=atm&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=Pa*s&STUnit=N%2Fm&Type=IsoBar&RefState=DEF&Action=Page'
-
+    path = PATH
     driver = None
 
     try:
         driver = get_driver()
         
-        driver.get(PATH) # Init the web page.
+        driver.get(path) # Init the web page.
 
         filled_parameters(driver=driver, low_temperature=low_temperature, high_temperature=high_temperature)
 
