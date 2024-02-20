@@ -7,7 +7,6 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from WebScrap.WebDriverPath import WebDriverPath, PATH # Personal path
 from bs4 import BeautifulSoup
 import numpy as np
-from time import sleep
 
 def get_driver() -> webdriver.Edge:
     driver_path = WebDriverPath
@@ -79,5 +78,4 @@ def get_water_thermophysic_info(low_temperature: float, high_temperature: float)
             print(f'Time out for find the tags: {tag_name_table} and {tag_name_tr}')
     finally:
         if driver:
-            sleep(3)
             driver.quit()
