@@ -57,26 +57,27 @@ def get_water_thermophysic_info(low_temperature: float, high_temperature: float)
 
         filled_parameters(driver=driver, low_temperature=low_temperature, high_temperature=high_temperature)
 
-        css_selector = 'table.small'
+        tag_name_table = 'tbody'
+        tag_name_tr = 'tr'
         try:
             WebDriverWait(driver, 20).until(
-            lambda d: len(d.find_element(By.CSS_SELECTOR, css_selector).find_elements(By.TAG_NAME, "tr")) >= 2
+            lambda d: len(d.find_element(By.TAG_NAME, tag_name_table).find_elements(By.TAG_NAME, tag_name_tr)) == 2
             )
-            # Ahora usamos BeautifulSoup para parsear la página
+            # Parse the web page with bs4
             soup = BeautifulSoup(driver.page_source, 'html.parser')
-            table = soup.find('table', class_='small')
-            rows = table.find_all('tr', {'align': 'right'})
+            table = soup.find(tag_name_table)
+            rows = table.find_all(tag_name_tr)
             
-            if rows and len(rows) > 1:
-                data_row = rows[1].find_all('td')
+            if rows and len(rows) == 2:
+                data_row = rows[1].find_all('td', {'align': 'right'})
                 values = np.array([float(data_row[i].text) for i in [2, 3, 11, 12]])
                 return values
             else:
                 print('Values or table not found.')
                 return np.array([0.0, 0.0, 0.0, 0.0]) 
         except TimeoutException:
-            print(f'Time out for select the selector: {css_selector}')
+            print(f'Time out for find the tags: {tag_name_table} and {tag_name_tr}')
     finally:
         if driver:
-            sleep(2)  # Just to make sure everything loads properly.
+            sleep(3)
             driver.quit()
