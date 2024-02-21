@@ -43,11 +43,12 @@ def filled_parameters(driver: webdriver.Edge, low_temperature: float, high_tempe
     except TimeoutException:
         print('Button not found at time.')
 
-def get_water_thermophysic_info(low_temperature: float, high_temperature: float) -> np.ndarray:
-
+def get_water_thermophysic_info(mean_Temperature:int) -> np.ndarray:
     # Path route
     path = PATH
     driver = None
+
+    low_temperature = high_temperature = mean_Temperature
 
     try:
         driver = get_driver()
@@ -59,7 +60,7 @@ def get_water_thermophysic_info(low_temperature: float, high_temperature: float)
         tag_name_table = 'tbody'
         tag_name_tr = 'tr'
         try:
-            WebDriverWait(driver, 20).until(
+            WebDriverWait(driver, 10).until(
             lambda d: len(d.find_element(By.TAG_NAME, tag_name_table).find_elements(By.TAG_NAME, tag_name_tr)) == 2
             )
             # Parse the web page with bs4
@@ -69,11 +70,11 @@ def get_water_thermophysic_info(low_temperature: float, high_temperature: float)
             
             if rows and len(rows) == 2:
                 data_row = rows[1].find_all('td', {'align': 'right'})
-                values = np.array([float(data_row[i].text) for i in [2, 3, 11, 12]])
+                values = np.array([float(data_row[i].text) for i in [2, 11, 12]])
                 return values
             else:
                 print('Values or table not found.')
-                return np.array([0.0, 0.0, 0.0, 0.0]) 
+                return np.array([0.0, 0.0, 0.0]) 
         except TimeoutException:
             print(f'Time out for find the tags: {tag_name_table} and {tag_name_tr}')
     finally:
