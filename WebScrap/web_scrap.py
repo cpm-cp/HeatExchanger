@@ -8,13 +8,6 @@ from WebScrap.WebDriverPath import WebDriverPath, PATH # Personal path
 from bs4 import BeautifulSoup
 import numpy as np
 
-def get_driver() -> webdriver.Edge:
-    driver_path = WebDriverPath
-    service = Service(executable_path=driver_path)
-    driver_options = webdriver.EdgeOptions()
-    driver = webdriver.Edge(service=service, options=driver_options)
-    return driver
-
 def find_and_send_keys(driver, locator, value):
     try:
         element = WebDriverWait(driver, 10).until(
@@ -51,7 +44,7 @@ def get_water_thermophysic_info(mean_Temperature:int) -> np.ndarray:
     low_temperature = high_temperature = mean_Temperature
 
     try:
-        driver = get_driver()
+        driver = webdriver.Edge()
         
         driver.get(path) # Init the web page.
 
@@ -70,11 +63,11 @@ def get_water_thermophysic_info(mean_Temperature:int) -> np.ndarray:
             
             if rows and len(rows) == 2:
                 data_row = rows[1].find_all('td', {'align': 'right'})
-                values = np.array([float(data_row[i].text) for i in [2, 11, 12]])
+                values = np.array([float(data_row[i].text) for i in [2, 8, 11, 12]])
                 return values
             else:
                 print('Values or table not found.')
-                return np.array([0.0, 0.0, 0.0]) 
+                return np.array([0.0, 0.0, 0.0, 0.0]) 
         except TimeoutException:
             print(f'Time out for find the tags: {tag_name_table} and {tag_name_tr}')
     finally:
