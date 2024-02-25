@@ -59,7 +59,6 @@ numb_thermal_units = NTU(U_d, new_surface, c_min)
 Q_max = c_min * (high_acetone_T - low_water_T)
 effectivity = exchanger_efectivity('counter-current', c_min, numb_thermal_units)
 
-print(U_c)
 print(f'The corrected area is: {new_surface:.3f} ft^2.')
 print(f'The corrected desing coeff is: {U_dc:.3f} Btu/h*°F*ft^2.')
 print(f'The corrected foulling factor is: {corrected_foulling_factor:.3f}')
