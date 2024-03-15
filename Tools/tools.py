@@ -36,7 +36,7 @@ def config_diameters(config:str)->list[float]:
         config (str): '2*1-1/4' or '3*2' or '4*3'
 
     Returns:
-        list[float]: [Diameter ,External_diameter, Internal_diameter, Flow_area, Linear_surface]
+        list[float]: [Diameter, Diameter_1 , Diameter_2, Flow_area, Linear_surface]
     """
     options = {
         '2*1-1/4': {'D':1.380,'DE': 1.66, 'DI': 3.35, 'flow_area': 1.50, 'linear_suf': 0.435},
@@ -44,11 +44,11 @@ def config_diameters(config:str)->list[float]:
         '4*3': {'D':3.068,'DE': 3.50, 'DI': 4.026, 'flow_area': 7.38, 'linear_suf': 0.917}
     }
     if config in options:
-        return list(options[config].values())
+        return [value if key == 'linear_suf' else value / 12 for key, value in options[config].items()]
     else:
         return []
 
-def flow_area(external_diam:float, internal_diam:float)->tuple[float]:
+def flow_area(diameter:float, external_diam:float, internal_diam:float)->tuple[float]:
     """flow area parameters.
 
     Args:
@@ -60,7 +60,7 @@ def flow_area(external_diam:float, internal_diam:float)->tuple[float]:
     """
     equivalent_diam = (external_diam**2 - internal_diam**2) / internal_diam
     annulus_area = np.pi * (external_diam**2 - internal_diam**2) / 4
-    pipe_area = np.pi * external_diam**2 / 4
+    pipe_area = np.pi * diameter**2 / 4
     return (equivalent_diam, annulus_area, pipe_area)
 
 def mass_velocity(mass_flow_rate:float, area:float)->float:
@@ -190,6 +190,9 @@ def pressure_drop(fanning_factor:float, in_out_drop:float, density:float)->float
 def C_value(mass_flow_rate:float, Cp_value:float)->float:
     """Calculate the calorific capacity."""
     return mass_flow_rate * Cp_value
+
+def c_minimum(c_values:tuple[float])->float:
+    return min(c_values)
 
 def c_to_NTU(C_values:list[float, float])->float:
     """Calculate the c values for the NTU efecivity method."""
