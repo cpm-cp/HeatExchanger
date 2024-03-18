@@ -24,11 +24,13 @@ high_acetone_T:float = 199.868 # °F
 config_diam = "3*2"
 config_flow = "counter-current"
 
+exchanger_type = 'double pipe'
+
 heat_flow = water_mass_flow * water_Cp * (high_water_T - low_water_T) # Ideal heat transfer
 acetone_mass_flow = heat_flow / (acetone_Cp  * (high_acetone_T - low_acetone_T))
 
 log_mean_T = lmtd(config_flow, high_acetone_T, low_acetone_T, high_water_T, low_water_T)
-diameter ,D_1, D_2, Flow_area, lin_surface = config_diameters(config_diam)
+diameter ,D_1, D_2, Flow_area, lin_surface = flow_area(config_diam, exchanger_type)
 
 equivalent_diam, annulus_area, pipe_area = flow_area(diameter, D_2, D_1)
 
