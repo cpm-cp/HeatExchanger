@@ -1,5 +1,6 @@
 import numpy as np
-from math import ceil, log, exp
+from fractions import Fraction
+from tables import double_pipe_data, pipe_shell_data
 
 def mean_temperature(inlet_temperature:float, outlet_temperature:float)->int:
     """Calculate the mean temperature."""
@@ -29,39 +30,37 @@ def calculate_nusselt(Reynold:float, Prandtl:float)->float:
             return coef * Reynold**exp * Prandtl**(1/3)
     return 0  # Default return if none of the conditions match
 
-def config_diameters(config:str)->list[float]:
-    """Choice diameters config.
+def flow_area(config:str, exchanger_type:str, bwg: int|None = None, pipe_arrangement: str = None)->list[float]:
+    """Choice diameters config for heat exchanger as double pipe and pipe and shell.
 
     Args:
-        config (str): '2*1-1/4' or '3*2' or '4*3'
+        config (str): double-pipe: '2*1-1/4', '3*2' or '4*3'.
+        pipe-shell: '1/2', '3/4' or '1'.
+        exchanger_type (str): exchanger type: 'double pipe' or 'pipe and shell'.
+        bwg (int | None): bwg value.
+        pipe_arrangement (str): Pipe arrangement for pipe-shell: 'square' or 'triangle'.
 
     Returns:
-        list[float]: [Diameter, Diameter_1 , Diameter_2, Flow_area, Linear_surface]
+        list[float]: Parameteres for the selected exchanger and selected config.
     """
-    options = {
-        '2*1-1/4': {'D':1.380,'DE': 1.66, 'DI': 3.35, 'flow_area': 1.50, 'linear_suf': 0.435},
-        '3*2': {'D':2.067,'DE': 2.38, 'DI': 3.068, 'flow_area': 3.35, 'linear_suf': 0.622},
-        '4*3': {'D':3.068,'DE': 3.50, 'DI': 4.026, 'flow_area': 7.38, 'linear_suf': 0.917}
-    }
-    if config in options:
-        return [value if key == 'linear_suf' else value / 12 for key, value in options[config].items()]
+    if exchanger_type == 'double pipe':
+        if config in ['2*1-1/4', '3*2', '4*3']:
+            options = double_pipe_data
+            diameter, int_diameter, ext_diameter, flow_area, lin_surface =  [value if key == 'linear_suf' else value / 12 for key, value in options[config].items()]
+            equivalent_diam = (ext_diameter**2 - int_diameter**2) / int_diameter
+            annulus_area = np.pi * (ext_diameter**2 - int_diameter**2) / 4
+            pipe_area = np.pi * diameter**2 / 4
+            return (equivalent_diam, annulus_area, pipe_area)
+        
+    elif exchanger_type == 'pipe and shell':
+        if config in ['1/2', '3/4', '1']:
+            options = pipe_shell_data
+            specific_dict =  filter(lambda aux: aux['BWG'] == bwg, options[config])
+            thickness, int_diameter, flow_area, lin_surf = [list(d.values())[1:] for d in specific_dict][0]
+            ext_diameter = float(Fraction(config))
+
     else:
         return []
-
-def flow_area(diameter:float, external_diam:float, internal_diam:float)->tuple[float]:
-    """flow area parameters.
-
-    Args:
-        external_diam (float): External diamter.
-        internal_diam (float): Internal diamater.
-
-    Returns:
-        tuple[float]: (equivalent_diam, annulus_area, pipe_area)
-    """
-    equivalent_diam = (external_diam**2 - internal_diam**2) / internal_diam
-    annulus_area = np.pi * (external_diam**2 - internal_diam**2) / 4
-    pipe_area = np.pi * diameter**2 / 4
-    return (equivalent_diam, annulus_area, pipe_area)
 
 def mass_velocity(mass_flow_rate:float, area:float)->float:
     """mass velocity.
@@ -116,18 +115,47 @@ def total_coefficient(U_c:float, fouling_factor:float=0)->float:
     """Calculate the total heat transfer coefficient, optionally including fouling."""
     return 1 / ((1 / U_c) + (fouling_factor * 2))
 
-def lmtd(config:str, T_hot_inner:float, T_hot_out:float, T_cold_inner:float, T_cold_out:float)->float:
-    """Calculate the Logarithmic Mean Temperature Difference."""
+def lmtd(exchanger_type: str, config: str, T_hot_in: float, T_hot_out: float, T_cold_in: float, T_cold_out: float) -> float:
+    """Calculate the Logarithmic Mean Temperature Difference (LMTD) and apply correction factor if needed.
+    
+    Parameters:
+    - exchanger_type: The type of heat exchanger ('double pipe' or 'pipe and shell').
+    - config: The configuration of flow ('parallel' or 'counter-current').
+    - T_hot_in: Temperature of the hot fluid entering the heat exchanger.
+    - T_hot_out: Temperature of the hot fluid exiting the heat exchanger.
+    - T_cold_in: Temperature of the cold fluid entering the heat exchanger.
+    - T_cold_out: Temperature of the cold fluid exiting the heat exchanger.
+    
+    Returns:
+    - The LMTD value, corrected if applicable for the heat exchanger type.
+    
+    Raises:
+    - ValueError: If an unsupported configuration or exchanger type is provided.
+    """
     config = config.lower()
-    if config == 'parallel':
-        Delta_T2 = (T_hot_inner - T_cold_inner)
-        Delta_T1 = (T_hot_out - T_cold_out)
-    elif config == 'counter-current':
-        Delta_T2 = (T_hot_inner - T_cold_out)
-        Delta_T1 = (T_hot_out - T_cold_inner)
+    exchanger_type = exchanger_type.lower()
+
+    # Calculate temperature differences based on flow configuration
+    delta_t1, delta_t2 = (T_hot_out - T_cold_out, T_hot_in - T_cold_in) if config == 'parallel' else \
+    (T_hot_out - T_cold_in, T_hot_in - T_cold_out) if config == 'counter-current' else \
+    (None, None)
+
+    if delta_t1 is None or delta_t2 is None:
+        raise ValueError(f'Unsupported configuration: {config}')
+    
+    lmtd_value = (delta_t2 - delta_t1) / np.log(delta_t2 / delta_t1)
+
+    if exchanger_type == 'double pipe':
+        return lmtd_value
+    elif exchanger_type == 'pipe and shell':
+        R = (T_hot_in - T_hot_out) / (T_cold_out - T_cold_in)
+        S = (T_cold_out - T_cold_in) / (T_hot_in - T_hot_out)
+        numerator = (np.sqrt(R**2 + 1) * np.log((1-S)/(1-R*S)))
+        denominator = ((R-1) * np.log((2-S*(R+1-np.sqrt(R**2 + 1)))/(2-S*(R+1+np.sqrt(R**2 + 1)))))
+        F = numerator / denominator
+        return lmtd_value * F
     else:
-        print('Out of bounds config.')
-    return (Delta_T2 - Delta_T1) / np.log(Delta_T2 / Delta_T1)
+        raise ValueError(f'Unsupported exchanger type: {exchanger_type}')
 
 def calculate_area(heat_flow:float, U:float, delta_T_log:float)->float:
     """Calculate the required heat exchanger area."""
@@ -139,7 +167,7 @@ def calculate_length(area:float, linear_surface:float)->float:
 
 def numb_forks(length:float, fork_legth_arm:float=20):
     """Calculate the number of passes based on length and pass length."""
-    return ceil(length / (fork_legth_arm * 2))
+    return np.ceil(length / (fork_legth_arm * 2))
 
 def corrected_length(numbs_fork, total_pass_length=40):
     """Calculate the corrected length based on the number of passes."""
