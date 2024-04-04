@@ -1,5 +1,7 @@
 from WebScrap.web_scrap import get_water_thermophysic_info
 from Tools.tools import *
+from Tools.auxiliar import *
+from Tools.general import *
 import numpy as np
 
 # Water values
@@ -29,13 +31,13 @@ exchanger_type = 'double pipe'
 heat_flow = water_mass_flow * water_Cp * (high_water_T - low_water_T) # Ideal heat transfer
 acetone_mass_flow = heat_flow / (acetone_Cp  * (high_acetone_T - low_acetone_T))
 
-log_mean_T = lmtd(config_flow, high_acetone_T, low_acetone_T, high_water_T, low_water_T)
+log_mean_T = lmtd('double pipe',config_flow, high_acetone_T, low_acetone_T, high_water_T, low_water_T)
 diameter ,D_1, D_2, Flow_area, lin_surface = flow_area(config_diam, exchanger_type)
 
 equivalent_diam, annulus_area, pipe_area = flow_area(diameter, D_2, D_1)
 
 annulus_mass_velocity, pipe_mass_velocity = mass_velocity(water_mass_flow, annulus_area), mass_velocity(acetone_mass_flow, pipe_area)
-annulus_Reynold, pipe_Reynold = Reynolds(equivalent_diam, annulus_mass_velocity, water_viscosity), Reynolds(diameter, pipe_mass_velocity, acetone_viscosity)
+annulus_Reynold, pipe_Reynold = reynolds(equivalent_diam, annulus_mass_velocity, water_viscosity), reynolds(diameter, pipe_mass_velocity, acetone_viscosity)
 annulus_Prandtl, pipe_Prandtl = Prandtl(water_Cp, water_viscosity, water_conductivity), Prandtl(acetone_Cp, acetone_viscosity, acetone_conductivity)
 annulus_Nusselt, pipe_Nusselt = calculate_nusselt(annulus_Reynold, annulus_Prandtl), calculate_nusselt(pipe_Reynold, pipe_Prandtl)
 annulus_convective_coeff, pipe_convective_coeff = convective_coeff(annulus_Nusselt, water_conductivity, equivalent_diam), convective_coeff(pipe_Nusselt, acetone_conductivity, diameter)
